@@ -1,0 +1,114 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+/////////////////////////////////////////////////////////////////////////////
+// English (United Kingdom) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+
+#include <windows.h>
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_RSPTCP_SETTINGS DIALOGEX 0, 0, 240, 219
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOPMOST
+CAPTION "RSP TCP ExtIO"
+FONT 8, "Ms Shell Dlg", 0, 0, 0x0
+BEGIN
+    LTEXT           "Host IP:Port",IDC_STATIC,7,7,150,8
+    EDITTEXT        IDC_IP_PORT,7,17,150,13
+    CONTROL         "Auto Reconnect",IDC_AUTORECONNECT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,35,150,8,WS_EX_TRANSPARENT
+    CONTROL         "Persistent Connection",IDC_PERSISTCONNECTION,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,48,149,8,WS_EX_TRANSPARENT
+    LTEXT           "Sample Rate:",IDC_STATIC,7,60,150,8
+    COMBOBOX        IDC_SAMPLERATE,7,70,150,200,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL
+    LTEXT           "Antenna Input:",IDC_STATIC,7,85,150,8
+    COMBOBOX        IDC_ANTINPUT,7,95,150,200,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL
+    LTEXT           "Buffer Size:",IDC_STATIC,7,165,150,8
+    COMBOBOX        IDC_BUFFER,7,175,150,200,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL
+    LTEXT           "PPM Correction",IDC_STATIC,7,192,150,8
+    EDITTEXT        IDC_PPM_S,7,202,55,14,ES_RIGHT | ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "",1011,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,51,202,11,14
+    CTEXT           "Gain Index",IDC_STATIC,177,7,60,10
+    CONTROL         "",IDC_GAIN,"msctls_trackbar32",TBS_VERT | TBS_BOTH | WS_TABSTOP,192,25,30,150
+    CONTROL         "Bias-T",IDC_BIAST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,113,35,10
+    CONTROL         "AM",IDC_AMNOTCH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,11,141,26,10
+    GROUPBOX        "Notch Filters",IDC_STATIC,6,128,151,34
+    CONTROL         "BC",IDC_FMNOTCH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,41,141,34,10
+    CONTROL         "DAB",IDC_DABNOTCH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,75,140,29,10
+    CONTROL         "RF",IDC_RFNOTCH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,107,140,25,10
+    CTEXT           "0",IDC_GRVALUE,175,177,60,10
+    CONTROL         "AGC",IDC_AGC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,127,114,30,10
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_RTL_SETTINGS, DIALOG
+    BEGIN
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_RTL_SETTINGS AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+#endif    // English (United Kingdom) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

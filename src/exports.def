@@ -1,0 +1,20 @@
+LIBRARY ExtIO_RSP_TCP
+EXPORTS
+    CloseHW
+    GetHWLO
+    GetHWSR
+    GetStatus
+    InitHW
+    OpenHW
+    SetCallback
+    SetHWLO
+    ShowGUI
+    HideGUI
+    SwitchGUI
+    StartHW
+    StopHW   
+    ExtIoGetSrates
+    ExtIoGetActualSrateIdx
+    ExtIoSetSrate
+    ExtIoGetSetting
+    ExtIoSetSetting
