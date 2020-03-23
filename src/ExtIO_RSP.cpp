@@ -92,7 +92,7 @@ static uint8_t* samples_buffer = NULL;
 static char ip_address[32] = "127.0.0.1";
 static int port_number = 1234;
 static volatile bool auto_reconnect = true;
-static volatile bool persist_connection = true;
+static volatile bool persist_connection = false;
 static bool async_connection = true;
 static int socket_delay_ms = 0;
 
