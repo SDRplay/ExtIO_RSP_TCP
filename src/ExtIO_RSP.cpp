@@ -71,8 +71,8 @@ static volatile bool biast_state = false;
 static volatile bool new_biast_state = false;
 static volatile uint32_t notch_state = 0;
 static volatile uint32_t new_notch_state = 0;
-static volatile uint8_t gain_index = 0;
-static volatile uint8_t new_gain_index = 0;
+static volatile uint8_t gain_index = 28;
+static volatile uint8_t new_gain_index = 28;
 static volatile uint8_t antenna_input = 0;
 static volatile uint8_t new_antenna_input = 0;
 static volatile bool reapply_all_settings = false;
@@ -94,7 +94,7 @@ static int port_number = 1234;
 static volatile bool auto_reconnect = true;
 static volatile bool persist_connection = true;
 static bool async_connection = true;
-static int socket_delay_ms = 1;
+static int socket_delay_ms = 0;
 
 volatile bool worker_stopped = false;
 volatile bool streaming_enabled = false;
@@ -414,7 +414,7 @@ int StartThread()
 		return -1;
 	}
 
-	samples_buffer = (uint8_t*)malloc(BUFFER_LENGTH * sizeof(uint8_t));
+	samples_buffer = (uint8_t*)malloc(BUFFER_LENGTH * sizeof(uint16_t));
 	if (!samples_buffer)
 	{
 		free(float_buffer);
@@ -566,15 +566,8 @@ void ThreadProc(void *p)
 			goto reconnect;
 		}
 
-		if (async_connection) 
-		{
-			conn.SetNonblocking();
-		}
-		else
-		{
-			conn.SetBlocking();
-		}
-				
+		conn.SetBlocking();
+		conn.SetReceiveTimeoutMillis(1000);
 		while (!worker_stopped)
 		{							
 			int to_read = (sizeof(rtl_tcp_dongle_info) + sizeof(rsp_extended_capabilities_t)) - header_pos;
@@ -595,9 +588,9 @@ void ThreadProc(void *p)
 				if (header_pos >= sizeof(rtl_tcp_dongle_info) + sizeof(rsp_extended_capabilities_t))
 				{
 					if (rsp_cap.magic[0] != 'R'
-						&& rsp_cap.magic[1] != 'S'
-						&& rsp_cap.magic[2] != 'P'
-						&& rsp_cap.magic[3] != '0')
+						|| rsp_cap.magic[1] != 'S'
+						|| rsp_cap.magic[2] != 'P'
+						|| rsp_cap.magic[3] != '0')
 					{
 						header_valid = false;
 						break;
@@ -635,6 +628,15 @@ void ThreadProc(void *p)
 		rsp_cap.version = ntohl(rsp_cap.version);
 		rsp_cap.hardware_version = ntohl(rsp_cap.hardware_version);
 		rsp_cap.sample_format = ntohl(rsp_cap.sample_format);
+
+		// Check capabilities struct version and ensure sample format is one we support
+		if (rsp_cap.version != RSP_CAPABILITIES_VERSION ||
+			(rsp_cap.sample_format != RSP_TCP_SAMPLE_FORMAT_UINT8 &&
+				rsp_cap.sample_format != RSP_TCP_SAMPLE_FORMAT_INT16))
+		{
+			goto reconnect;
+		}
+
 		reapply_all_settings = true;
 		
 		if (dialog_handle)
@@ -643,6 +645,8 @@ void ThreadProc(void *p)
 		}
 
 		int read_offset = 0;
+		int threshold = rsp_cap.sample_format == RSP_TCP_SAMPLE_FORMAT_INT16 ? buffer_len * 2 : buffer_len;
+
 		while (!worker_stopped)
 		{			
 			if (streaming_enabled)
@@ -650,7 +654,7 @@ void ThreadProc(void *p)
 				ProcessSettings(conn);
 			}
 			
-			int to_read = buffer_len - read_offset;
+			int to_read = threshold - read_offset;
 			int length = conn.Receive(to_read, (char*)&samples_buffer[read_offset]);
 			if (length <= 0)
 			{
@@ -670,22 +674,37 @@ void ThreadProc(void *p)
 			}
 
 			read_offset += length;			
-			if (read_offset >= buffer_len)
+			if (read_offset >= threshold)
 			{				
 				read_offset = 0;
 
 				if (rsp_cap.sample_format == RSP_TCP_SAMPLE_FORMAT_UINT8)
 				{
-					const float s = 1.0f / 32768.0f;
+					const float s = 1.0f / 255.0f;
 					unsigned char* char_ptr = (unsigned char*)samples_buffer;
 					float* float_ptr = float_buffer;
 
-					for (int i = 0; i < buffer_len / 2; i++)
+					for (int i = 0; i < threshold / 2; i++)
 					{
 						*float_ptr++ = ((float)(*char_ptr++ - 127.5f)) * s;
 						*float_ptr++ = ((float)(*char_ptr++ - 127.5f)) * s;
 					}
-					WinradCallBack(buffer_len / 2, 0, 0, float_buffer);
+					WinradCallBack(threshold / 2, 0, 0, float_buffer);
+				}
+				else
+				if (rsp_cap.sample_format == RSP_TCP_SAMPLE_FORMAT_INT16)
+				{
+					const float s = 1.0f / 32768.0f;
+
+					short* short_ptr = (short*)samples_buffer;
+					float* float_ptr = float_buffer;
+
+					for (int i = 0; i < threshold / 4; i++)
+					{
+						*float_ptr++ = (float)(*short_ptr++ * s);
+						*float_ptr++ = (float)(*short_ptr++ * s);
+					}
+					WinradCallBack(threshold / 4, 0, 0, float_buffer);
 				}
 			}	 
 		}
@@ -793,8 +812,7 @@ static void UpdateAntennaInputs(HWND hwndDlg)
 
 	if (rsp_cap.antenna_input_count >= 3)
 	{
-		_stprintf_s(str, 255, TEXT("Antenna HI-Z"));
-		ComboBox_AddString(hDlgItmAntInput, str);
+		ComboBox_AddString(hDlgItmAntInput, rsp_cap.third_antenna_name);
 	}
 
 	ComboBox_SetCurSel(hDlgItmAntInput, new_antenna_input);
@@ -823,9 +841,10 @@ static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 			Button_SetCheck(GetDlgItem(hwndDlg, IDC_PERSISTCONNECTION), persist_connection ? BST_CHECKED : BST_UNCHECKED);
 			SendMessage(GetDlgItem(hwndDlg, IDC_PPM_S), UDM_SETRANGE, (WPARAM)TRUE, (LPARAM)MAKELONG(MAX_PPM, MIN_PPM));
 
+			// Set Max Gain to start with
 			SendMessage(GetDlgItem(hwndDlg, IDC_GAIN), TBM_SETRANGEMIN, (WPARAM)TRUE, (LPARAM)0);
 			SendMessage(GetDlgItem(hwndDlg, IDC_GAIN), TBM_SETRANGEMAX, (WPARAM)TRUE, (LPARAM)GAIN_STEPS);
-			SendMessage(GetDlgItem(hwndDlg, IDC_GAIN), TBM_SETPOS, (WPARAM)TRUE, (LPARAM)GAIN_STEPS);
+			SendMessage(GetDlgItem(hwndDlg, IDC_GAIN), TBM_SETPOS, (WPARAM)TRUE, (LPARAM)0);
 
 			TCHAR tempStr[255];
 			_stprintf_s(tempStr, 255, TEXT("%d"), new_ppm_correction);
@@ -893,9 +912,11 @@ static INT_PTR CALLBACK MainDlgProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 					{
 						uint8_t input = ComboBox_GetCurSel(GET_WM_COMMAND_HWND(wParam, lParam));
 
-						if (input == 2 && new_frequency > 30000000)
+						if (input == 2 && new_frequency > (long)rsp_cap.third_antenna_freq_limit)
 						{
-							MessageBox(hwndDlg, "Hi-Z input can only be selected below 30MHz", "RSP-TCP", MB_OK);
+							char mess[255];
+							sprintf(mess, "%s input can only be selected below %d MHz", rsp_cap.third_antenna_name, (rsp_cap.third_antenna_freq_limit / 1000000));
+							MessageBox(hwndDlg, mess, "RSP-TCP", MB_OK);
 							UpdateAntennaInputs(hwndDlg);
 						}
 						else

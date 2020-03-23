@@ -1,0 +1,9 @@
+.vs
+*.tlog
+*.dll
+*.exp
+*.iobj
+*.ipdb
+*.lib
+*.res
+*.zip
